@@ -10,12 +10,12 @@
 - 푸시 알림 발송
 - 알림 대상 검증과 자기 자신 알림 제외
 - 딥링크 대상 관리
-- FCM/APNs 등 외부 push provider adapter
+- FCM/APNs 등 외부 push provider 연동
 
 ## 아키텍처 원칙
 
 - notification bounded context를 독립적으로 유지한다.
-- 알림 생성 정책, 발송 use case, provider adapter를 분리한다.
+- feature-based MVC 패턴을 기본으로 하고, 알림 Controller/API, Service, Repository, domain 책임을 분리한다.
 - 외부 provider 토큰과 응답은 민감정보로 취급한다.
 - 알림 payload에는 필요한 최소 정보만 포함한다.
 
@@ -23,7 +23,7 @@
 
 - `app -> gateway -> notification` 알림함 조회/읽음 처리를 기본으로 한다.
 - `main -> notification`, `chat -> notification` 알림 요청을 허용한다.
-- `notification -> FCM/APNs` provider 호출은 adapter 뒤에 둔다.
+- `notification -> FCM/APNs` provider 호출은 Service 내부의 명시적인 클라이언트/설정으로 분리한다.
 - 다른 서비스의 DB에 직접 접근하지 않는다.
 
 ## 핵심 도메인 주의점
