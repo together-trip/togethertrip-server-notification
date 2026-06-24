@@ -22,10 +22,20 @@ class FcmPushConfig {
 
         return FcmHttpPushNotificationSender(
             properties = properties,
+            accessTokenProvider = accessTokenProvider(properties, objectMapper),
             objectMapper = objectMapper,
             httpClient = HttpClient.newBuilder()
                 .connectTimeout(properties.timeout)
                 .build(),
         )
     }
+
+    private fun accessTokenProvider(
+        properties: FcmPushProperties,
+        objectMapper: ObjectMapper,
+    ): FcmAccessTokenProvider =
+        when {
+            properties.hasServiceAccount() -> ServiceAccountFcmAccessTokenProvider(properties, objectMapper)
+            else -> StaticFcmAccessTokenProvider(properties.accessToken)
+        }
 }

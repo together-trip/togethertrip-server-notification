@@ -25,8 +25,9 @@ Issue #12 `feat: 알림함 API와 FCM push 연동 구현`
 ## 실패 또는 미검증 항목
 
 - 실제 Firebase 서버로 push를 보내는 수동 검증은 수행하지 않았다.
-- 운영용 `FCM_ACCESS_TOKEN` 자동 발급/회전은 이번 구현 범위에서 제외했다.
+- FCM OAuth2 access token은 service account env 값으로 자동 발급/갱신하도록 구현했다.
+- `FCM_ACCESS_TOKEN` 직접 주입은 초기 수동 검증용 fallback으로 남겼다.
 
 ## 다음 조치
 
-- PR 본문에 gateway 헤더 주입, FCM 환경변수, access token 발급/회전 작업을 명시한다.
+- PR 본문에 gateway 헤더 주입, FCM service account 환경변수, access token 자동 발급 동작을 명시한다.

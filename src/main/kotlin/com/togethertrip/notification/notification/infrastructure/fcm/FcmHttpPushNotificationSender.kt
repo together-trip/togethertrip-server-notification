@@ -11,6 +11,7 @@ import java.net.http.HttpResponse
 
 class FcmHttpPushNotificationSender(
     private val properties: FcmPushProperties,
+    private val accessTokenProvider: FcmAccessTokenProvider,
     private val objectMapper: ObjectMapper,
     private val httpClient: HttpClient,
 ) : PushNotificationSender {
@@ -18,7 +19,7 @@ class FcmHttpPushNotificationSender(
     override fun send(command: PushNotificationCommand): PushNotificationResult {
         val request = HttpRequest.newBuilder(endpointUri())
             .timeout(properties.timeout)
-            .header("Authorization", "Bearer ${properties.accessToken}")
+            .header("Authorization", "Bearer ${accessTokenProvider.accessToken()}")
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(command.toFcmRequest())))
             .build()

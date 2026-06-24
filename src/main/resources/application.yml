@@ -45,5 +45,10 @@ notification:
       enabled: ${FCM_ENABLED:false}
       project-id: ${FCM_PROJECT_ID:}
       access-token: ${FCM_ACCESS_TOKEN:}
+      client-id: ${FCM_CLIENT_ID:}
+      client-email: ${FCM_CLIENT_EMAIL:}
+      private-key: ${FCM_PRIVATE_KEY:}
+      private-key-id: ${FCM_PRIVATE_KEY_ID:}
+      token-uri: ${FCM_TOKEN_URI:https://oauth2.googleapis.com/token}
       endpoint: ${FCM_ENDPOINT:https://fcm.googleapis.com}
       timeout: ${FCM_TIMEOUT:PT3S}

@@ -33,3 +33,8 @@ notification:
       enabled: false
       project-id:
       access-token:
+      client-id:
+      client-email:
+      private-key:
+      private-key-id:
+      token-uri: https://oauth2.googleapis.com/token

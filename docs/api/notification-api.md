@@ -164,9 +164,17 @@ main 서버와 같은 공통 에러 응답 형식을 사용한다.
 ```properties
 FCM_ENABLED=true
 FCM_PROJECT_ID=<firebase-project-id>
-FCM_ACCESS_TOKEN=<oauth2-access-token>
+FCM_CLIENT_ID=<service-account-client-id>
+FCM_CLIENT_EMAIL=<service-account-client-email>
+FCM_PRIVATE_KEY_ID=<service-account-private-key-id>
+FCM_PRIVATE_KEY=<service-account-private-key-with-escaped-newlines>
+FCM_TOKEN_URI=https://oauth2.googleapis.com/token
 FCM_ENDPOINT=https://fcm.googleapis.com
 FCM_TIMEOUT=PT3S
 ```
 
-`FCM_ACCESS_TOKEN`은 단기 토큰이므로 운영에서는 service account 기반 발급/회전 자동화가 필요하다. 값이 없거나 `FCM_ENABLED=false`이면 no-op sender로 동작한다.
+`FCM_PRIVATE_KEY`는 service account JSON의 `private_key` 값을 사용하되, 환경변수에 넣을 때 줄바꿈을 `\n`으로 이스케이프한다.
+서버는 이 값을 원래 줄바꿈으로 복원한 뒤 `https://www.googleapis.com/auth/firebase.messaging` scope로 OAuth2 access token을 자동 발급/갱신한다.
+
+초기 수동 검증이 필요하면 `FCM_ACCESS_TOKEN=<oauth2-access-token>`을 fallback으로 사용할 수 있지만, 운영에서는 service account 값 기반 자동 발급을 사용한다.
+값이 없거나 `FCM_ENABLED=false`이면 no-op sender로 동작한다.
