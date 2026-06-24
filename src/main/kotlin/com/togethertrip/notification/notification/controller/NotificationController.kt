@@ -24,14 +24,21 @@ class NotificationController(
         @RequestHeader(CurrentUserHeaders.USER_ID) userId: Long,
         @RequestParam(defaultValue = "100") limit: Int,
     ): ApiResponse<List<NotificationResponse>> =
-        ApiResponse.success(notificationService.getMyNotifications(userId, limit))
+        ApiResponse.success(
+            notificationService.getMyNotifications(userId, limit)
+                .map(NotificationResponse::from),
+        )
 
     @PatchMapping("/{notificationId}/read")
     fun markAsRead(
         @RequestHeader(CurrentUserHeaders.USER_ID) userId: Long,
         @PathVariable notificationId: Long,
     ): ApiResponse<NotificationResponse> =
-        ApiResponse.success(notificationService.markAsRead(userId, notificationId))
+        ApiResponse.success(
+            NotificationResponse.from(
+                notificationService.markAsRead(userId, notificationId),
+            ),
+        )
 
     @PatchMapping("/read-all")
     fun markAllAsRead(

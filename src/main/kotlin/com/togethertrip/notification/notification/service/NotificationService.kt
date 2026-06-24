@@ -1,9 +1,7 @@
 package com.togethertrip.notification.notification.service
 
-import com.togethertrip.notification.global.exception.BusinessException
 import com.togethertrip.notification.notification.domain.Notification
-import com.togethertrip.notification.notification.dto.response.NotificationResponse
-import com.togethertrip.notification.notification.exception.NotificationErrorCode
+import com.togethertrip.notification.notification.exception.NotificationNotFoundException
 import com.togethertrip.notification.notification.repository.NotificationRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -16,23 +14,22 @@ class NotificationService(
 ) {
 
     @Transactional(readOnly = true)
-    fun getMyNotifications(userId: Long, limit: Int): List<NotificationResponse> {
+    fun getMyNotifications(userId: Long, limit: Int): List<Notification> {
         val pageSize = limit.coerceIn(1, MAX_NOTIFICATION_LIST_SIZE)
         return notificationRepository
             .findByRecipientUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
                 recipientUserId = userId,
                 pageable = PageRequest.of(0, pageSize),
             )
-            .map(NotificationResponse::from)
     }
 
     @Transactional
-    fun markAsRead(userId: Long, notificationId: Long): NotificationResponse {
+    fun markAsRead(userId: Long, notificationId: Long): Notification {
         val notification = findMine(userId, notificationId)
         if (notification.readAt == null) {
             notification.readAt = Instant.now()
         }
-        return NotificationResponse.from(notification)
+        return notification
     }
 
     @Transactional
@@ -63,8 +60,3 @@ class NotificationService(
         const val MAX_NOTIFICATION_LIST_SIZE = 100
     }
 }
-
-class NotificationNotFoundException(
-    @Suppress("UNUSED_PARAMETER")
-    notificationId: Long,
-) : BusinessException(NotificationErrorCode.NOTIFICATION_NOT_FOUND)

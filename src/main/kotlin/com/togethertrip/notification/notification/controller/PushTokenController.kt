@@ -2,10 +2,12 @@ package com.togethertrip.notification.notification.controller
 
 import com.togethertrip.notification.global.response.ApiResponse
 import com.togethertrip.notification.global.web.CurrentUserHeaders
+import com.togethertrip.notification.notification.domain.PushTokenPlatform
 import com.togethertrip.notification.notification.dto.request.DeletePushTokenRequest
 import com.togethertrip.notification.notification.dto.request.RegisterPushTokenRequest
 import com.togethertrip.notification.notification.dto.response.PushTokenResponse
 import com.togethertrip.notification.notification.service.PushTokenService
+import com.togethertrip.notification.notification.service.RegisterPushTokenCommand
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -24,7 +26,11 @@ class PushTokenController(
         @RequestHeader(CurrentUserHeaders.USER_ID) userId: Long,
         @RequestBody request: RegisterPushTokenRequest,
     ): ApiResponse<PushTokenResponse> =
-        ApiResponse.success(pushTokenService.register(userId, request))
+        ApiResponse.success(
+            PushTokenResponse.from(
+                pushTokenService.register(userId, request.toCommand()),
+            ),
+        )
 
     @DeleteMapping
     fun deactivate(
@@ -34,4 +40,11 @@ class PushTokenController(
         pushTokenService.deactivate(userId, request.token)
         return ApiResponse.success()
     }
+
+    private fun RegisterPushTokenRequest.toCommand(): RegisterPushTokenCommand =
+        RegisterPushTokenCommand(
+            token = token,
+            platform = platform ?: PushTokenPlatform.UNKNOWN,
+            deviceId = deviceId,
+        )
 }

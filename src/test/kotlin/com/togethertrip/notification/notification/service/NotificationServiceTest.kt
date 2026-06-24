@@ -1,6 +1,7 @@
 package com.togethertrip.notification.notification.service
 
 import com.togethertrip.notification.notification.domain.Notification
+import com.togethertrip.notification.notification.exception.NotificationNotFoundException
 import com.togethertrip.notification.notification.repository.NotificationRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull

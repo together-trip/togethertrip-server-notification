@@ -1,7 +1,6 @@
 package com.togethertrip.notification.notification.service
 
 import com.togethertrip.notification.notification.domain.PushTokenPlatform
-import com.togethertrip.notification.notification.dto.request.RegisterPushTokenRequest
 import com.togethertrip.notification.notification.repository.PushTokenRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -21,14 +20,14 @@ class PushTokenServiceTest(
 
     @Test
     fun `같은 FCM token을 여러 번 등록해도 중복 저장하지 않는다`() {
-        val request = RegisterPushTokenRequest(
+        val command = RegisterPushTokenCommand(
             token = "fcm-token-1",
             platform = PushTokenPlatform.ANDROID,
             deviceId = "device-1",
         )
 
-        pushTokenService.register(userId = 1L, request = request)
-        pushTokenService.register(userId = 1L, request = request.copy(platform = PushTokenPlatform.IOS))
+        pushTokenService.register(userId = 1L, command = command)
+        pushTokenService.register(userId = 1L, command = command.copy(platform = PushTokenPlatform.IOS))
 
         val saved = pushTokenRepository.findByToken("fcm-token-1")
         assertEquals(1, pushTokenRepository.count())
@@ -37,8 +36,22 @@ class PushTokenServiceTest(
 
     @Test
     fun `내 token만 비활성화한다`() {
-        pushTokenService.register(userId = 1L, request = RegisterPushTokenRequest(token = "fcm-token-1"))
-        pushTokenService.register(userId = 2L, request = RegisterPushTokenRequest(token = "fcm-token-2"))
+        pushTokenService.register(
+            userId = 1L,
+            command = RegisterPushTokenCommand(
+                token = "fcm-token-1",
+                platform = PushTokenPlatform.UNKNOWN,
+                deviceId = null,
+            ),
+        )
+        pushTokenService.register(
+            userId = 2L,
+            command = RegisterPushTokenCommand(
+                token = "fcm-token-2",
+                platform = PushTokenPlatform.UNKNOWN,
+                deviceId = null,
+            ),
+        )
 
         pushTokenService.deactivate(userId = 1L, token = "fcm-token-1")
         pushTokenService.deactivate(userId = 1L, token = "fcm-token-2")
