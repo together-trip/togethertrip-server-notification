@@ -1,9 +1,42 @@
 spring:
+  config:
+    import:
+      - optional:classpath:.env[.properties]
+
   application:
     name: notification
 
-  profiles:
-    default: local
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST}
+      port: ${SPRING_REDIS_PORT}
+      password: ${SPRING_REDIS_PASSWORD}
+
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED}
+    locations: ${SPRING_FLYWAY_LOCATIONS}
+    baseline-on-migrate: true
+    baseline-version: 1
+
+  sql:
+    init:
+      mode: never
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: ${JPA_SHOW_SQL}
 
 server:
-  port: 8082
+  port: ${SERVER_PORT}
+
+notification:
+  sqs:
+    queue-url: ${NOTIFICATION_QUEUE_URL:}
+    region: ${AWS_REGION}
