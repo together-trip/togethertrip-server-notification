@@ -163,12 +163,12 @@ main 서버와 같은 공통 에러 응답 형식을 사용한다.
 
 ```properties
 FCM_ENABLED=true
-FCM_PROJECT_ID=<firebase-project-id>
-FCM_CLIENT_ID=<service-account-client-id>
-FCM_CLIENT_EMAIL=<service-account-client-email>
-FCM_PRIVATE_KEY_ID=<service-account-private-key-id>
-FCM_PRIVATE_KEY=<service-account-private-key-with-escaped-newlines>
-FCM_TOKEN_URI=https://oauth2.googleapis.com/token
+FCM_PROJECT_ID=<json.project_id>
+FCM_CLIENT_ID=<json.client_id>
+FCM_CLIENT_EMAIL=<json.client_email>
+FCM_PRIVATE_KEY_ID=<json.private_key_id>
+FCM_PRIVATE_KEY=<json.private_key, replace newlines with \n>
+FCM_TOKEN_URI=<json.token_uri, default https://oauth2.googleapis.com/token>
 FCM_ENDPOINT=https://fcm.googleapis.com
 FCM_TIMEOUT=PT3S
 ```
