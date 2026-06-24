@@ -10,7 +10,7 @@ Issue #10 `feat: main outbox SQS 알림 이벤트 소비 구현`
 
 ## 범위
 
-- `NOTIFICATION_QUEUE_URL`, `AWS_REGION` 기반 SQS consumer 설정 추가
+- `main` 서버와 동일한 `.env` import / 환경변수 placeholder 방식으로 `NOTIFICATION_QUEUE_URL`, `AWS_REGION` 기반 SQS consumer 설정 추가
 - `main` outbox envelope 수신 DTO 정의
 - `outbox event id`를 `sourceEventId`로 사용하는 알림 생성 use case 추가
 - `payload.recipients[].userId`를 파싱해 수신자별 알림 데이터 생성
@@ -29,6 +29,7 @@ Issue #10 `feat: main outbox SQS 알림 이벤트 소비 구현`
 
 - notification bounded context 안에 `Notification` entity, repository, `CreateNotificationFromOutboxUseCase`를 둔다.
 - SQS adapter는 infrastructure 패키지에서 `SqsClient`와 use case를 연결한다.
+- 환경변수 설정은 `main` 서버처럼 `application.yml`에서 `optional:classpath:.env[.properties]`를 import하고 `${ENV_NAME}` placeholder를 직접 참조한다.
 - payload 도메인 타입은 notification이 소유하지 않으므로 원본 `JsonNode`를 문자열 snapshot으로 저장하고, 공통 수신자 목록만 파싱한다.
 - consumer는 예외를 삼키지 않고 메시지 단위로 기록한 뒤 delete를 생략해 SQS 재시도/DLQ 정책을 따른다.
 

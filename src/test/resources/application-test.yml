@@ -9,12 +9,22 @@ spring:
     redis:
       host: 127.0.0.1
       port: 6379
+      password: test
 
   jpa:
     hibernate:
       ddl-auto: create-drop
     show-sql: false
 
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 0
+
 notification:
   sqs:
+    queue-url: https://sqs.ap-northeast-2.amazonaws.com/123/togethertrip-test-notification
+    region: ap-northeast-2
     enabled: false
