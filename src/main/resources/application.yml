@@ -38,5 +38,5 @@ server:
 
 notification:
   sqs:
-    queue-url: ${NOTIFICATION_QUEUE_URL}
+    queue-url: ${NOTIFICATION_QUEUE_URL:}
     region: ${AWS_REGION}

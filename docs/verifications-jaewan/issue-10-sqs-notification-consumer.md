@@ -18,6 +18,7 @@ Issue #10 `feat: main outbox SQS 알림 이벤트 소비 구현`
 - AWS SDK mock 기반 SQS consumer 테스트로 성공 시 `deleteMessage`, 실패 시 미삭제 동작을 확인했다.
 - use case 테스트로 수신자별 알림 생성과 `sourceEventId + recipientUserId` 중복 미생성을 확인했다.
 - 환경변수 설정은 `main` 서버와 동일하게 `application.yml`에서 `.env` import와 `${ENV_NAME}` placeholder를 사용하도록 확인했다.
+- consumer가 `NotificationMessageQueue` 포트에만 의존하고, 설정에 따라 SQS/no-op adapter가 선택되는지 테스트로 확인했다.
 
 ## 실패 또는 미검증 항목
 

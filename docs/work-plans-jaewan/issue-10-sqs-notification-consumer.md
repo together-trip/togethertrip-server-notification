@@ -16,6 +16,7 @@ Issue #10 `feat: main outbox SQS 알림 이벤트 소비 구현`
 - `payload.recipients[].userId`를 파싱해 수신자별 알림 데이터 생성
 - `sourceEventId + recipientUserId` 유니크 제약과 use case 필터링으로 중복 생성 방지
 - 처리 성공 시 SQS 메시지 삭제, 처리 실패 시 삭제하지 않는 consumer 구현
+- 메시지 큐 포트를 두고 SQS 연결이 있으면 SQS adapter, 없으면 no-op adapter를 사용하는 구조 추가
 - AWS SDK mock 기반 SQS 소비 테스트 추가
 
 ## 제외 범위
@@ -28,7 +29,9 @@ Issue #10 `feat: main outbox SQS 알림 이벤트 소비 구현`
 ## 설계
 
 - notification bounded context 안에 `Notification` entity, repository, `CreateNotificationFromOutboxUseCase`를 둔다.
-- SQS adapter는 infrastructure 패키지에서 `SqsClient`와 use case를 연결한다.
+- application/service 계층의 consumer는 `NotificationMessageQueue` 포트에만 의존한다.
+- SQS adapter는 infrastructure 패키지에서 `SqsClient`와 queue port를 연결한다.
+- `NOTIFICATION_QUEUE_URL`이 없거나 consumer가 비활성화된 경우 no-op queue adapter를 사용해 로컬/테스트 환경에서 실제 SQS 연결 없이 기동한다.
 - 환경변수 설정은 `main` 서버처럼 `application.yml`에서 `optional:classpath:.env[.properties]`를 import하고 `${ENV_NAME}` placeholder를 직접 참조한다.
 - payload 도메인 타입은 notification이 소유하지 않으므로 원본 `JsonNode`를 문자열 snapshot으로 저장하고, 공통 수신자 목록만 파싱한다.
 - consumer는 예외를 삼키지 않고 메시지 단위로 기록한 뒤 delete를 생략해 SQS 재시도/DLQ 정책을 따른다.
@@ -37,8 +40,10 @@ Issue #10 `feat: main outbox SQS 알림 이벤트 소비 구현`
 
 - use case: 수신자별 알림 생성
 - use case: 같은 `sourceEventId + recipientUserId` 재처리 시 중복 미생성
-- SQS consumer: 성공 시 `deleteMessage` 호출
-- SQS consumer: 처리 예외 시 `deleteMessage` 미호출
+- consumer: 성공 시 queue message acknowledge
+- consumer: 처리 예외 시 queue message 미acknowledge
+- SQS adapter: acknowledge 시 `deleteMessage` 호출
+- 설정: SQS queue url 유무에 따른 SQS/no-op adapter 선택
 
 ## 위험과 확인 사항
 
