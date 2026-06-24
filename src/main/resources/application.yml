@@ -40,3 +40,10 @@ notification:
   sqs:
     queue-url: ${NOTIFICATION_QUEUE_URL:}
     region: ${AWS_REGION}
+  push:
+    fcm:
+      enabled: ${FCM_ENABLED:false}
+      project-id: ${FCM_PROJECT_ID:}
+      access-token: ${FCM_ACCESS_TOKEN:}
+      endpoint: ${FCM_ENDPOINT:https://fcm.googleapis.com}
+      timeout: ${FCM_TIMEOUT:PT3S}

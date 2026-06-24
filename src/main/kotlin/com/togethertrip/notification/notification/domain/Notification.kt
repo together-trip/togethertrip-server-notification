@@ -37,6 +37,15 @@ class Notification(
     @Column(name = "payload_snapshot", nullable = false, columnDefinition = "text")
     val payloadSnapshot: String,
 
+    @Column(nullable = false, length = 120)
+    val title: String,
+
+    @Column(nullable = false, length = 500)
+    val body: String,
+
+    @Column
+    val deeplink: String? = null,
+
     @Column(name = "occurred_at")
     val occurredAt: Instant? = null,
 
