@@ -2,6 +2,7 @@ package com.togethertrip.notification.notification.service
 
 import com.togethertrip.notification.notification.domain.PushToken
 import com.togethertrip.notification.notification.repository.PushTokenRepository
+import com.togethertrip.notification.notification.service.command.RegisterPushTokenCommand
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 

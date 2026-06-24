@@ -1,5 +1,6 @@
 package com.togethertrip.notification.notification.service
 
+import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tools.jackson.module.kotlin.jacksonObjectMapper

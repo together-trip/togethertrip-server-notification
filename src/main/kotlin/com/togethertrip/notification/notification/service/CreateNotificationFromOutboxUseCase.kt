@@ -3,6 +3,8 @@ package com.togethertrip.notification.notification.service
 import com.togethertrip.notification.notification.domain.Notification
 import com.togethertrip.notification.notification.push.NotificationPushDispatchService
 import com.togethertrip.notification.notification.repository.NotificationRepository
+import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
+import com.togethertrip.notification.notification.service.result.CreateNotificationResult
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.support.TransactionSynchronization
@@ -71,7 +73,3 @@ class CreateNotificationFromOutboxUseCase(
         )
     }
 }
-
-data class CreateNotificationResult(
-    val createdCount: Int,
-)

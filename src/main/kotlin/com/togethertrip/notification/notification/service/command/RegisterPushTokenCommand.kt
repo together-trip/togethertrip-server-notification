@@ -1,4 +1,4 @@
-package com.togethertrip.notification.notification.service
+package com.togethertrip.notification.notification.service.command
 
 import com.togethertrip.notification.notification.domain.PushTokenPlatform
 

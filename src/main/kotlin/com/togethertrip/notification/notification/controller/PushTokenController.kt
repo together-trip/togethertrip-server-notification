@@ -7,7 +7,7 @@ import com.togethertrip.notification.notification.dto.request.DeletePushTokenReq
 import com.togethertrip.notification.notification.dto.request.RegisterPushTokenRequest
 import com.togethertrip.notification.notification.dto.response.PushTokenResponse
 import com.togethertrip.notification.notification.service.PushTokenService
-import com.togethertrip.notification.notification.service.RegisterPushTokenCommand
+import com.togethertrip.notification.notification.service.command.RegisterPushTokenCommand
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

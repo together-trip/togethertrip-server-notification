@@ -1,5 +1,7 @@
 package com.togethertrip.notification.notification.service
 
+import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
+import com.togethertrip.notification.notification.service.model.NotificationDisplay
 import org.springframework.stereotype.Component
 import tools.jackson.databind.JsonNode
 
@@ -102,12 +104,6 @@ class NotificationPayloadMapper {
             else -> null
         }
 }
-
-data class NotificationDisplay(
-    val title: String,
-    val body: String,
-    val deeplink: String?,
-)
 
 private fun JsonNode.text(fieldName: String): String? =
     path(fieldName).asStringOpt().orElse(null)?.takeIf { it.isNotBlank() }

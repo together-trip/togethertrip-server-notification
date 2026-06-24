@@ -1,6 +1,6 @@
 package com.togethertrip.notification.notification.infrastructure.sqs
 
-import com.togethertrip.notification.notification.service.ReceivedNotificationMessage
+import com.togethertrip.notification.notification.service.message.ReceivedNotificationMessage
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
