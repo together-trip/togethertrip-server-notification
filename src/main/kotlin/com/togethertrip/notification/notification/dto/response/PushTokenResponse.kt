@@ -1,18 +1,8 @@
-package com.togethertrip.notification.notification.dto
+package com.togethertrip.notification.notification.dto.response
 
 import com.togethertrip.notification.notification.domain.PushToken
 import com.togethertrip.notification.notification.domain.PushTokenPlatform
 import java.time.Instant
-
-data class RegisterPushTokenRequest(
-    val token: String,
-    val platform: PushTokenPlatform? = PushTokenPlatform.UNKNOWN,
-    val deviceId: String? = null,
-)
-
-data class DeletePushTokenRequest(
-    val token: String,
-)
 
 data class PushTokenResponse(
     val id: Long,

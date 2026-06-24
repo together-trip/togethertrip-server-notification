@@ -1,4 +1,4 @@
-package com.togethertrip.notification.notification.dto
+package com.togethertrip.notification.notification.dto.response
 
 import com.togethertrip.notification.notification.domain.Notification
 import java.time.Instant

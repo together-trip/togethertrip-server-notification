@@ -20,21 +20,25 @@ X-User-Id: 1
 응답 예시:
 
 ```json
-[
-  {
-    "id": 1,
-    "sourceEventId": 201,
-    "eventType": "POST_CREATED",
-    "aggregateType": "POST",
-    "aggregateId": 20,
-    "title": "제주 여행",
-    "body": "지우님이 첫 일정을 작성했습니다.",
-    "deeplink": "togethertrip://trips/10/posts/20",
-    "occurredAt": "2026-06-24T00:00:00Z",
-    "readAt": null,
-    "createdAt": "2026-06-24T00:00:01Z"
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "sourceEventId": 201,
+      "eventType": "POST_CREATED",
+      "aggregateType": "POST",
+      "aggregateId": 20,
+      "title": "제주 여행",
+      "body": "지우님이 첫 일정을 작성했습니다.",
+      "deeplink": "togethertrip://trips/10/posts/20",
+      "occurredAt": "2026-06-24T00:00:00Z",
+      "readAt": null,
+      "createdAt": "2026-06-24T00:00:01Z"
+    }
+  ],
+  "message": null
+}
 ```
 
 ## 알림 읽음 처리
@@ -45,6 +49,28 @@ X-User-Id: 1
 ```
 
 다른 사용자의 알림 ID로 요청하면 `404`를 반환한다.
+
+응답 예시:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "sourceEventId": 201,
+    "eventType": "POST_CREATED",
+    "aggregateType": "POST",
+    "aggregateId": 20,
+    "title": "제주 여행",
+    "body": "지우님이 첫 일정을 작성했습니다.",
+    "deeplink": "togethertrip://trips/10/posts/20",
+    "occurredAt": "2026-06-24T00:00:00Z",
+    "readAt": "2026-06-24T00:10:00Z",
+    "createdAt": "2026-06-24T00:00:01Z"
+  },
+  "message": null
+}
+```
 
 ## 전체 읽음 처리
 
@@ -57,7 +83,11 @@ X-User-Id: 1
 
 ```json
 {
-  "updatedCount": 3
+  "success": true,
+  "data": {
+    "updatedCount": 3
+  },
+  "message": null
 }
 ```
 
@@ -77,6 +107,22 @@ Content-Type: application/json
 
 응답에는 token 원문을 포함하지 않는다.
 
+응답 예시:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "platform": "ANDROID",
+    "deviceId": "device-1",
+    "active": true,
+    "lastRegisteredAt": "2026-06-24T00:00:00Z"
+  },
+  "message": null
+}
+```
+
 ## FCM Token 비활성화
 
 ```http
@@ -86,6 +132,28 @@ Content-Type: application/json
 
 {
   "token": "fcm-registration-token"
+}
+```
+
+응답 예시:
+
+```json
+{
+  "success": true,
+  "data": {},
+  "message": null
+}
+```
+
+## 에러 응답
+
+main 서버와 같은 공통 에러 응답 형식을 사용한다.
+
+```json
+{
+  "success": false,
+  "code": "NOTIFICATION_NOT_FOUND",
+  "message": "알림을 찾을 수 없습니다."
 }
 ```
 

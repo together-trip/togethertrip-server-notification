@@ -1,8 +1,7 @@
 package com.togethertrip.notification.notification.service
 
 import com.togethertrip.notification.notification.domain.PushTokenPlatform
-import com.togethertrip.notification.notification.dto.DeletePushTokenRequest
-import com.togethertrip.notification.notification.dto.RegisterPushTokenRequest
+import com.togethertrip.notification.notification.dto.request.RegisterPushTokenRequest
 import com.togethertrip.notification.notification.repository.PushTokenRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse

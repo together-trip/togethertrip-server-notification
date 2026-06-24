@@ -1,7 +1,9 @@
 package com.togethertrip.notification.notification.service
 
+import com.togethertrip.notification.global.exception.BusinessException
 import com.togethertrip.notification.notification.domain.Notification
-import com.togethertrip.notification.notification.dto.NotificationResponse
+import com.togethertrip.notification.notification.dto.response.NotificationResponse
+import com.togethertrip.notification.notification.exception.NotificationErrorCode
 import com.togethertrip.notification.notification.repository.NotificationRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -63,5 +65,6 @@ class NotificationService(
 }
 
 class NotificationNotFoundException(
+    @Suppress("UNUSED_PARAMETER")
     notificationId: Long,
-) : RuntimeException("notification not found. notificationId=$notificationId")
+) : BusinessException(NotificationErrorCode.NOTIFICATION_NOT_FOUND)

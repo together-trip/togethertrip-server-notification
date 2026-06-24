@@ -2,8 +2,8 @@ package com.togethertrip.notification.notification.service
 
 import com.togethertrip.notification.notification.domain.PushToken
 import com.togethertrip.notification.notification.domain.PushTokenPlatform
-import com.togethertrip.notification.notification.dto.RegisterPushTokenRequest
-import com.togethertrip.notification.notification.dto.PushTokenResponse
+import com.togethertrip.notification.notification.dto.request.RegisterPushTokenRequest
+import com.togethertrip.notification.notification.dto.response.PushTokenResponse
 import com.togethertrip.notification.notification.repository.PushTokenRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
