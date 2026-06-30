@@ -1,14 +1,21 @@
 package com.togethertrip.notification.notification.service
 
 import com.togethertrip.notification.notification.domain.Notification
+import com.togethertrip.notification.notification.push.NotificationPushDispatchService
 import com.togethertrip.notification.notification.repository.NotificationRepository
+import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
+import com.togethertrip.notification.notification.service.result.CreateNotificationResult
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.transaction.support.TransactionSynchronization
+import org.springframework.transaction.support.TransactionSynchronizationManager
 import tools.jackson.databind.ObjectMapper
 
 @Service
 class CreateNotificationFromOutboxUseCase(
     private val notificationRepository: NotificationRepository,
+    private val notificationPayloadMapper: NotificationPayloadMapper,
+    private val notificationPushDispatchService: NotificationPushDispatchService,
     private val objectMapper: ObjectMapper,
 ) {
 
@@ -24,6 +31,7 @@ class CreateNotificationFromOutboxUseCase(
             recipientUserIds = recipientUserIds,
         )
         val payloadSnapshot = objectMapper.writeValueAsString(message.payload)
+        val display = notificationPayloadMapper.map(message)
         val notifications = recipientUserIds
             .filterNot { it in existingRecipientUserIds }
             .map { recipientUserId ->
@@ -34,6 +42,9 @@ class CreateNotificationFromOutboxUseCase(
                     aggregateType = message.aggregateType,
                     aggregateId = message.aggregateId,
                     payloadSnapshot = payloadSnapshot,
+                    title = display.title,
+                    body = display.body,
+                    deeplink = display.deeplink,
                     occurredAt = message.occurredAt(),
                 )
             }
@@ -42,10 +53,23 @@ class CreateNotificationFromOutboxUseCase(
             return CreateNotificationResult(0)
         }
 
-        return CreateNotificationResult(notificationRepository.saveAll(notifications).size)
+        val savedNotifications = notificationRepository.saveAll(notifications)
+        dispatchPushAfterCommit(savedNotifications)
+        return CreateNotificationResult(savedNotifications.size)
+    }
+
+    private fun dispatchPushAfterCommit(notifications: List<Notification>) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            notifications.forEach(notificationPushDispatchService::dispatch)
+            return
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() {
+                    notifications.forEach(notificationPushDispatchService::dispatch)
+                }
+            },
+        )
     }
 }
-
-data class CreateNotificationResult(
-    val createdCount: Int,
-)

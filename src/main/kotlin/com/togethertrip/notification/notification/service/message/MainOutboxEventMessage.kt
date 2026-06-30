@@ -1,4 +1,4 @@
-package com.togethertrip.notification.notification.service
+package com.togethertrip.notification.notification.service.message
 
 import tools.jackson.databind.JsonNode
 import java.time.Instant

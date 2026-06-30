@@ -28,3 +28,13 @@ notification:
     queue-url: https://sqs.ap-northeast-2.amazonaws.com/123/togethertrip-test-notification
     region: ap-northeast-2
     enabled: false
+  push:
+    fcm:
+      enabled: false
+      project-id:
+      access-token:
+      client-id:
+      client-email:
+      private-key:
+      private-key-id:
+      token-uri: https://oauth2.googleapis.com/token

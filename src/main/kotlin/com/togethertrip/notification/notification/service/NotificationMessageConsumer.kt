@@ -1,5 +1,7 @@
 package com.togethertrip.notification.notification.service
 
+import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
+import com.togethertrip.notification.notification.service.message.ReceivedNotificationMessage
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component

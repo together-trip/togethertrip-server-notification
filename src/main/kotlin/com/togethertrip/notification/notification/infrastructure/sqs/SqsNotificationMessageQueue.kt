@@ -1,7 +1,7 @@
 package com.togethertrip.notification.notification.infrastructure.sqs
 
 import com.togethertrip.notification.notification.service.NotificationMessageQueue
-import com.togethertrip.notification.notification.service.ReceivedNotificationMessage
+import com.togethertrip.notification.notification.service.message.ReceivedNotificationMessage
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest

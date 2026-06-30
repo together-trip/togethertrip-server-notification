@@ -1,5 +1,7 @@
 package com.togethertrip.notification.notification.service
 
+import com.togethertrip.notification.notification.service.message.ReceivedNotificationMessage
+import com.togethertrip.notification.notification.service.result.CreateNotificationResult
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
