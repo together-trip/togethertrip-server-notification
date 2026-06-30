@@ -41,6 +41,27 @@ X-User-Id: 1
 }
 ```
 
+## 읽지 않은 알림 개수 조회
+
+```http
+GET /notification/api/notifications/unread-count
+X-User-Id: 1
+```
+
+삭제되지 않았고 `readAt`이 비어 있는 내 알림 개수를 반환한다.
+
+응답 예시:
+
+```json
+{
+  "success": true,
+  "data": {
+    "count": 3
+  },
+  "message": null
+}
+```
+
 ## 알림 읽음 처리
 
 ```http
@@ -87,6 +108,27 @@ X-User-Id: 1
   "data": {
     "updatedCount": 3
   },
+  "message": null
+}
+```
+
+## 알림 삭제
+
+```http
+DELETE /notification/api/notifications/{notificationId}
+X-User-Id: 1
+```
+
+내 알림만 삭제할 수 있다. 다른 사용자의 알림 ID로 요청하면 `404`를 반환한다.
+
+삭제는 물리 삭제가 아니라 `deleted_at`을 기록하는 soft delete다. 삭제된 알림은 알림 목록 조회에 더 이상 포함되지 않는다.
+
+응답 예시:
+
+```json
+{
+  "success": true,
+  "data": {},
   "message": null
 }
 ```

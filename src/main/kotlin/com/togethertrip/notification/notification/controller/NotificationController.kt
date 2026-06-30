@@ -4,7 +4,9 @@ import com.togethertrip.notification.global.response.ApiResponse
 import com.togethertrip.notification.global.web.CurrentUserHeaders
 import com.togethertrip.notification.notification.dto.response.MarkAllNotificationsReadResponse
 import com.togethertrip.notification.notification.dto.response.NotificationResponse
+import com.togethertrip.notification.notification.dto.response.UnreadNotificationCountResponse
 import com.togethertrip.notification.notification.service.NotificationService
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -29,6 +31,16 @@ class NotificationController(
                 .map(NotificationResponse::from),
         )
 
+    @GetMapping("/unread-count")
+    fun countUnreadNotifications(
+        @RequestHeader(CurrentUserHeaders.USER_ID) userId: Long,
+    ): ApiResponse<UnreadNotificationCountResponse> =
+        ApiResponse.success(
+            UnreadNotificationCountResponse(
+                count = notificationService.countUnreadNotifications(userId),
+            ),
+        )
+
     @PatchMapping("/{notificationId}/read")
     fun markAsRead(
         @RequestHeader(CurrentUserHeaders.USER_ID) userId: Long,
@@ -49,4 +61,13 @@ class NotificationController(
                 updatedCount = notificationService.markAllAsRead(userId),
             ),
         )
+
+    @DeleteMapping("/{notificationId}")
+    fun deleteNotification(
+        @RequestHeader(CurrentUserHeaders.USER_ID) userId: Long,
+        @PathVariable notificationId: Long,
+    ): ApiResponse<Unit> {
+        notificationService.deleteNotification(userId, notificationId)
+        return ApiResponse.success()
+    }
 }

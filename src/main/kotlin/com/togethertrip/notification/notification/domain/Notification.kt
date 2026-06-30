@@ -51,4 +51,9 @@ class Notification(
 
     @Column(name = "read_at")
     var readAt: Instant? = null,
-) : BaseEntity()
+) : BaseEntity() {
+
+    fun delete(deletedAt: Instant = Instant.now()) {
+        this.deletedAt = deletedAt
+    }
+}

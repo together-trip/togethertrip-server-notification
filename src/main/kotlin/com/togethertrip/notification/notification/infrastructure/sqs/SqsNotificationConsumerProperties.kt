@@ -7,6 +7,9 @@ import java.time.Duration
 data class SqsNotificationConsumerProperties(
     val queueUrl: String = "",
     val region: String = "ap-northeast-2",
+    val accessKeyId: String = "",
+    val secretAccessKey: String = "",
+    val sessionToken: String = "",
     val enabled: Boolean = true,
     val maxMessages: Int = 10,
     val waitTime: Duration = Duration.ofSeconds(10),
@@ -14,4 +17,8 @@ data class SqsNotificationConsumerProperties(
     val fixedDelay: Duration = Duration.ofSeconds(3),
 ) {
     fun hasQueueUrl(): Boolean = queueUrl.isNotBlank()
+
+    fun hasStaticCredentials(): Boolean = accessKeyId.isNotBlank() && secretAccessKey.isNotBlank()
+
+    fun hasSessionToken(): Boolean = sessionToken.isNotBlank()
 }

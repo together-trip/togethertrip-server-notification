@@ -27,4 +27,31 @@ class SqsNotificationConsumerConfigTest {
 
         assertIs<SqsNotificationMessageQueue>(queue)
     }
+
+    @Test
+    fun `SQS access key 설정이 있으면 static credentials provider로 queue를 생성한다`() {
+        val queue = config.notificationMessageQueue(
+            properties = SqsNotificationConsumerProperties(
+                queueUrl = "https://sqs.ap-northeast-2.amazonaws.com/123/togethertrip-prod-notification",
+                accessKeyId = "access-key",
+                secretAccessKey = "secret-key",
+            ),
+        )
+
+        assertIs<SqsNotificationMessageQueue>(queue)
+    }
+
+    @Test
+    fun `SQS session token 설정이 있으면 session credentials로 queue를 생성한다`() {
+        val queue = config.notificationMessageQueue(
+            properties = SqsNotificationConsumerProperties(
+                queueUrl = "https://sqs.ap-northeast-2.amazonaws.com/123/togethertrip-prod-notification",
+                accessKeyId = "access-key",
+                secretAccessKey = "secret-key",
+                sessionToken = "session-token",
+            ),
+        )
+
+        assertIs<SqsNotificationMessageQueue>(queue)
+    }
 }

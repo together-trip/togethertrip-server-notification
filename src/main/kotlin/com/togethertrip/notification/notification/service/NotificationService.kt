@@ -23,6 +23,10 @@ class NotificationService(
             )
     }
 
+    @Transactional(readOnly = true)
+    fun countUnreadNotifications(userId: Long): Long =
+        notificationRepository.countByRecipientUserIdAndReadAtIsNullAndDeletedAtIsNull(userId)
+
     @Transactional
     fun markAsRead(userId: Long, notificationId: Long): Notification {
         val notification = findMine(userId, notificationId)
@@ -48,6 +52,11 @@ class NotificationService(
                 updatedCount += 1
             }
         return updatedCount
+    }
+
+    @Transactional
+    fun deleteNotification(userId: Long, notificationId: Long) {
+        findMine(userId, notificationId).delete()
     }
 
     private fun findMine(userId: Long, notificationId: Long): Notification =
