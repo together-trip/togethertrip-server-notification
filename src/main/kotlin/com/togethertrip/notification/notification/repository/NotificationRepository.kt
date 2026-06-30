@@ -30,4 +30,6 @@ interface NotificationRepository : JpaRepository<Notification, Long> {
         id: Long,
         recipientUserId: Long,
     ): Notification?
+
+    fun countByRecipientUserIdAndReadAtIsNullAndDeletedAtIsNull(recipientUserId: Long): Long
 }
