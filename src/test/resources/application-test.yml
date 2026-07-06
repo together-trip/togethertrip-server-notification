@@ -28,6 +28,13 @@ notification:
     queue-url: https://sqs.ap-northeast-2.amazonaws.com/123/togethertrip-test-notification
     region: ap-northeast-2
     enabled: false
+    fixed-delay: PT3S
+    max-messages: 10
+    wait-time: 10s
+    visibility-timeout: 30s
+    access-key-id: ""
+    secret-access-key: ""
+    session-token: ""
   push:
     fcm:
       enabled: false
@@ -38,3 +45,5 @@ notification:
       private-key:
       private-key-id:
       token-uri: https://oauth2.googleapis.com/token
+      endpoint: https://fcm.googleapis.com
+      timeout: PT3S

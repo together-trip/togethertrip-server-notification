@@ -1,26 +1,27 @@
 spring:
   config:
     import:
+      - optional:file:.env[.properties]
       - optional:classpath:.env[.properties]
 
   application:
     name: notification
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://127.0.0.1:5432/together_trip_notification}
+    username: ${SPRING_DATASOURCE_USERNAME:together_trip}
+    password: ${SPRING_DATASOURCE_PASSWORD:together_trip}
     driver-class-name: org.postgresql.Driver
 
   data:
     redis:
-      host: ${SPRING_REDIS_HOST}
-      port: ${SPRING_REDIS_PORT}
-      password: ${SPRING_REDIS_PASSWORD}
+      host: ${SPRING_REDIS_HOST:127.0.0.1}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:}
 
   flyway:
-    enabled: ${SPRING_FLYWAY_ENABLED}
-    locations: ${SPRING_FLYWAY_LOCATIONS}
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+    locations: ${SPRING_FLYWAY_LOCATIONS:classpath:db/migration}
     baseline-on-migrate: true
     baseline-version: 1
 
@@ -31,18 +32,23 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: ${JPA_SHOW_SQL}
+    show-sql: ${JPA_SHOW_SQL:false}
 
 server:
-  port: ${SERVER_PORT}
+  port: ${SERVER_PORT:8082}
 
 notification:
   sqs:
-    queue-url: ${NOTIFICATION_QUEUE_URL:}
-    region: ${AWS_REGION}
+    queue-url: ${NOTIFICATION_SQS_QUEUE_URL:${NOTIFICATION_QUEUE_URL:}}
+    region: ${AWS_REGION:ap-northeast-2}
     access-key-id: ${AWS_ACCESS_KEY_ID:}
     secret-access-key: ${AWS_SECRET_ACCESS_KEY:}
     session-token: ${AWS_SESSION_TOKEN:}
+    enabled: ${NOTIFICATION_SQS_CONSUMER_ENABLED:true}
+    fixed-delay: ${NOTIFICATION_SQS_FIXED_DELAY:PT3S}
+    max-messages: ${NOTIFICATION_SQS_MAX_MESSAGES:10}
+    wait-time: ${NOTIFICATION_SQS_WAIT_TIME:10s}
+    visibility-timeout: ${NOTIFICATION_SQS_VISIBILITY_TIMEOUT:30s}
   push:
     fcm:
       enabled: ${FCM_ENABLED:false}

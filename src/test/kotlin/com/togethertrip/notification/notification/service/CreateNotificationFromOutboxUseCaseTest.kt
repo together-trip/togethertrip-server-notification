@@ -6,12 +6,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
-import tools.jackson.module.kotlin.jacksonObjectMapper
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -45,6 +43,43 @@ class CreateNotificationFromOutboxUseCaseTest(
         assertEquals(2, notificationRepository.count())
     }
 
+    @Test
+    fun `trip recap 완료 이벤트는 모든 수신자에게 recap 알림을 생성한다`() {
+        val payload = objectMapper.readTree(
+            """
+            {
+              "eventVersion": 1,
+              "tripId": 10,
+              "tripRecapId": 100,
+              "tripName": "제주 여행",
+              "recipients": [
+                { "userId": 1 },
+                { "userId": 2 },
+                { "userId": 2 }
+              ],
+              "occurredAt": "2026-07-06T12:00:00Z"
+            }
+            """.trimIndent(),
+        )
+        val message = MainOutboxEventMessage(
+            id = 201L,
+            aggregateType = "TRIP_RECAP",
+            aggregateId = 100L,
+            eventType = "TRIP_RECAP_COMPLETED",
+            payload = payload,
+        )
+
+        val result = useCase.create(message)
+        val notifications = notificationRepository.findAll().sortedBy { it.recipientUserId }
+
+        assertEquals(2, result.createdCount)
+        assertEquals(2, notificationRepository.count())
+        assertEquals(listOf(1L, 2L), notifications.map { it.recipientUserId })
+        assertEquals("지난 여행 Recap이 완성됐어요", notifications.first().title)
+        assertEquals("제주 여행 추억을 확인해보세요.", notifications.first().body)
+        assertEquals("togethertrip://trips/10/recap/100", notifications.first().deeplink)
+    }
+
     private fun sampleMessage(sourceEventId: Long, recipientUserIds: List<Long>): MainOutboxEventMessage {
         val recipients = recipientUserIds.joinToString(",") { """{"userId":$it}""" }
         val payload = objectMapper.readTree(
@@ -66,9 +101,4 @@ class CreateNotificationFromOutboxUseCaseTest(
             payload = payload,
         )
     }
-}
-
-class ObjectMapperTestConfig {
-    @Bean
-    fun objectMapper(): ObjectMapper = jacksonObjectMapper()
 }
