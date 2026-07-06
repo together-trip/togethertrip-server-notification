@@ -11,55 +11,55 @@ class NotificationPayloadMapper {
     fun map(message: MainOutboxEventMessage): NotificationDisplay {
         val payload = message.payload
         return when (message.eventType) {
-            "TRIP_PARTICIPANTS_ADDED" -> NotificationDisplay(
+            NotificationEventContract.TRIP_PARTICIPANTS_ADDED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "여행에 초대되었습니다",
                 body = "${payload.text("actorDisplayName") ?: "누군가"}님이 여행에 초대했습니다.",
                 deeplink = tripDeeplink(payload),
             )
 
-            "TRIP_PARTICIPANT_JOINED" -> NotificationDisplay(
+            NotificationEventContract.TRIP_PARTICIPANT_JOINED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "새 참여자가 들어왔습니다",
                 body = "${payload.text("actorDisplayName") ?: "참여자"}님이 여행에 참여했습니다.",
                 deeplink = tripDeeplink(payload),
             )
 
-            "TRIP_PARTICIPANT_REMOVED" -> NotificationDisplay(
+            NotificationEventContract.TRIP_PARTICIPANT_REMOVED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "여행 참여 상태가 변경되었습니다",
                 body = "${payload.text("actorDisplayName") ?: "관리자"}님이 여행 참여자를 변경했습니다.",
                 deeplink = tripDeeplink(payload),
             )
 
-            "POST_CREATED" -> NotificationDisplay(
+            NotificationEventContract.POST_CREATED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "새 게시글이 올라왔습니다",
                 body = "${payload.text("actorDisplayName") ?: "누군가"}님이 ${payload.text("title") ?: "게시글"}을 작성했습니다.",
                 deeplink = postDeeplink(payload),
             )
 
-            "EXPENSE_POST_CREATED" -> NotificationDisplay(
+            NotificationEventContract.EXPENSE_POST_CREATED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "새 지출이 등록되었습니다",
                 body = "${payload.text("actorDisplayName") ?: "누군가"}님이 ${payload.text("amount") ?: ""}${payload.text("currency") ?: ""} 지출을 등록했습니다.",
                 deeplink = postDeeplink(payload),
             )
 
-            "POST_COMMENT_CREATED" -> NotificationDisplay(
+            NotificationEventContract.POST_COMMENT_CREATED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "새 댓글이 달렸습니다",
                 body = "${payload.text("actorDisplayName") ?: "누군가"}님이 댓글을 남겼습니다.",
                 deeplink = postDeeplink(payload),
             )
 
-            "SETTLEMENT_CONFIRMED" -> NotificationDisplay(
+            NotificationEventContract.SETTLEMENT_CONFIRMED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "정산이 확정되었습니다",
                 body = "여행 정산이 확정되었습니다.",
                 deeplink = settlementDeeplink(payload),
             )
 
-            "SETTLEMENT_TRANSFER_CONFIRMED_BY_SENDER" -> NotificationDisplay(
+            NotificationEventContract.SETTLEMENT_TRANSFER_CONFIRMED_BY_SENDER -> NotificationDisplay(
                 title = payload.text("tripName") ?: "송금 확인 요청",
                 body = "${payload.text("actorDisplayName") ?: "송금자"}님이 송금을 완료했다고 표시했습니다.",
                 deeplink = settlementTransferDeeplink(payload),
             )
 
-            "SETTLEMENT_TRANSFER_COMPLETED" -> NotificationDisplay(
+            NotificationEventContract.SETTLEMENT_TRANSFER_COMPLETED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "송금이 완료되었습니다",
                 body = "${payload.text("actorDisplayName") ?: "수금자"}님이 송금을 확인했습니다.",
                 deeplink = settlementTransferDeeplink(payload),
@@ -96,13 +96,13 @@ class NotificationPayloadMapper {
         return "togethertrip://trips/$tripId/settlements/$settlementId/transfers/$transferId"
     }
 
-    private fun aggregateDeeplink(message: MainOutboxEventMessage): String? =
-        when (message.aggregateType) {
-            "TRIP" -> "togethertrip://trips/${message.aggregateId}"
-            "POST" -> "togethertrip://posts/${message.aggregateId}"
-            "SETTLEMENT" -> "togethertrip://settlements/${message.aggregateId}"
-            else -> null
-        }
+private fun aggregateDeeplink(message: MainOutboxEventMessage): String? =
+    when (message.aggregateType) {
+        NotificationEventContract.AGGREGATE_TRIP -> "togethertrip://trips/${message.aggregateId}"
+        NotificationEventContract.AGGREGATE_POST -> "togethertrip://posts/${message.aggregateId}"
+        NotificationEventContract.AGGREGATE_SETTLEMENT -> "togethertrip://settlements/${message.aggregateId}"
+        else -> null
+    }
 }
 
 private fun JsonNode.text(fieldName: String): String? =
