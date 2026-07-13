@@ -29,6 +29,12 @@ class NotificationPayloadMapper {
                 deeplink = tripDeeplink(payload),
             )
 
+            NotificationEventContract.TRIP_RECAP_COMPLETED -> NotificationDisplay(
+                title = "지난 여행 Recap이 완성됐어요",
+                body = "${payload.text("tripName") ?: "지난 여행"} 추억을 확인해보세요.",
+                deeplink = tripRecapDeeplink(payload),
+            )
+
             NotificationEventContract.POST_CREATED -> NotificationDisplay(
                 title = payload.text("tripName") ?: "새 게시글이 올라왔습니다",
                 body = "${payload.text("actorDisplayName") ?: "누군가"}님이 ${payload.text("title") ?: "게시글"}을 작성했습니다.",
@@ -76,6 +82,12 @@ class NotificationPayloadMapper {
     private fun tripDeeplink(payload: JsonNode): String? =
         payload.long("tripId")?.let { "togethertrip://trips/$it" }
 
+    private fun tripRecapDeeplink(payload: JsonNode): String? {
+        val tripId = payload.long("tripId") ?: return null
+        val tripRecapId = payload.long("tripRecapId") ?: return "togethertrip://trips/$tripId/recap"
+        return "togethertrip://trips/$tripId/recap/$tripRecapId"
+    }
+
     private fun postDeeplink(payload: JsonNode): String? {
         val tripId = payload.long("tripId") ?: return null
         val postId = payload.long("postId") ?: return "togethertrip://trips/$tripId"
@@ -96,12 +108,18 @@ class NotificationPayloadMapper {
         return "togethertrip://trips/$tripId/settlements/$settlementId/transfers/$transferId"
     }
 
-private fun aggregateDeeplink(message: MainOutboxEventMessage): String? =
-    when (message.aggregateType) {
-        NotificationEventContract.AGGREGATE_TRIP -> "togethertrip://trips/${message.aggregateId}"
-        NotificationEventContract.AGGREGATE_POST -> "togethertrip://posts/${message.aggregateId}"
-        NotificationEventContract.AGGREGATE_SETTLEMENT -> "togethertrip://settlements/${message.aggregateId}"
-        else -> null
+    private fun aggregateDeeplink(message: MainOutboxEventMessage): String? =
+        when (message.aggregateType) {
+            NotificationEventContract.AGGREGATE_TRIP -> "togethertrip://trips/${message.aggregateId}"
+            NotificationEventContract.AGGREGATE_TRIP_RECAP -> tripRecapAggregateDeeplink(message)
+            NotificationEventContract.AGGREGATE_POST -> "togethertrip://posts/${message.aggregateId}"
+            NotificationEventContract.AGGREGATE_SETTLEMENT -> "togethertrip://settlements/${message.aggregateId}"
+            else -> null
+        }
+
+    private fun tripRecapAggregateDeeplink(message: MainOutboxEventMessage): String? {
+        val tripId = message.payload.long("tripId") ?: return null
+        return "togethertrip://trips/$tripId/recap/${message.aggregateId}"
     }
 }
 
