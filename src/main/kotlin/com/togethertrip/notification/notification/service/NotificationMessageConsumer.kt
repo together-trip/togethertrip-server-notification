@@ -13,6 +13,7 @@ class NotificationMessageConsumer(
     private val notificationMessageQueue: NotificationMessageQueue,
     private val objectMapper: ObjectMapper,
     private val createNotificationFromOutboxUseCase: CreateNotificationFromOutboxUseCase,
+    private val accountDeletionService: AccountDeletionService,
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -25,12 +26,16 @@ class NotificationMessageConsumer(
     fun handle(message: ReceivedNotificationMessage) {
         try {
             val outboxEvent = objectMapper.readValue(message.body, MainOutboxEventMessage::class.java)
-            val result = createNotificationFromOutboxUseCase.create(outboxEvent)
+            val handledCount = if (outboxEvent.eventType == NotificationEventContract.USER_ACCOUNT_DELETED) {
+                if (accountDeletionService.delete(outboxEvent)) 1 else 0
+            } else {
+                createNotificationFromOutboxUseCase.create(outboxEvent).createdCount
+            }
             notificationMessageQueue.acknowledge(message)
             logger.info(
-                "notification outbox message consumed. sourceEventId={}, createdCount={}",
+                "notification outbox message consumed. sourceEventId={}, handledCount={}",
                 outboxEvent.id,
-                result.createdCount,
+                handledCount,
             )
         } catch (exception: Exception) {
             logger.warn(

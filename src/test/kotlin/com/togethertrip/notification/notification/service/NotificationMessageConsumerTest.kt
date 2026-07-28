@@ -15,10 +15,12 @@ class NotificationMessageConsumerTest {
 
     private val queue = FakeNotificationMessageQueue()
     private val useCase = mock<CreateNotificationFromOutboxUseCase>()
+    private val accountDeletionService = mock<AccountDeletionService>()
     private val consumer = NotificationMessageConsumer(
         notificationMessageQueue = queue,
         objectMapper = jacksonObjectMapper(),
         createNotificationFromOutboxUseCase = useCase,
+        accountDeletionService = accountDeletionService,
     )
 
     @Test
@@ -51,6 +53,27 @@ class NotificationMessageConsumerTest {
     }
 
     @Test
+    fun `계정 삭제 이벤트는 전용 service로 전달하고 성공 시 acknowledge 한다`() {
+        whenever(accountDeletionService.delete(any())).thenReturn(true)
+        val message = accountDeletionMessage()
+
+        consumer.handle(message)
+
+        verify(accountDeletionService).delete(any())
+        verify(useCase, never()).create(any())
+        assertEquals(listOf(message), queue.acknowledgedMessages)
+    }
+
+    @Test
+    fun `잘못된 계정 삭제 payload 처리 실패는 acknowledge 하지 않는다`() {
+        whenever(accountDeletionService.delete(any())).thenThrow(IllegalArgumentException("invalid payload"))
+
+        consumer.handle(accountDeletionMessage())
+
+        assertEquals(emptyList<ReceivedNotificationMessage>(), queue.acknowledgedMessages)
+    }
+
+    @Test
     fun `no-op queue는 SQS 연결이 없어도 메시지를 반환하지 않는다`() {
         assertEquals(emptyList<ReceivedNotificationMessage>(), com.togethertrip.notification.notification.infrastructure.sqs.NoopNotificationMessageQueue.receive())
         verify(useCase, never()).create(any())
@@ -73,6 +96,25 @@ class NotificationMessageConsumerTest {
                     ],
                     "occurredAt": "2026-06-24T00:00:00Z",
                     "eventVersion": 1
+                  }
+                }
+            """.trimIndent(),
+        )
+
+    private fun accountDeletionMessage(): ReceivedNotificationMessage =
+        ReceivedNotificationMessage(
+            id = "message-account-deleted",
+            receiptHandle = "receipt-account-deleted",
+            body = """
+                {
+                  "id": 301,
+                  "aggregateType": "USER",
+                  "aggregateId": 7,
+                  "eventType": "USER_ACCOUNT_DELETED",
+                  "payload": {
+                    "eventVersion": 1,
+                    "userId": 7,
+                    "occurredAt": "2026-07-28T12:00:00Z"
                   }
                 }
             """.trimIndent(),
