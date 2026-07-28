@@ -1,6 +1,8 @@
 package com.togethertrip.notification.notification.service
 
 import com.togethertrip.notification.notification.repository.NotificationRepository
+import com.togethertrip.notification.notification.domain.DeletedAccount
+import com.togethertrip.notification.notification.repository.DeletedAccountRepository
 import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -10,6 +12,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
 import tools.jackson.databind.ObjectMapper
+import java.time.Instant
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -19,6 +22,7 @@ class CreateNotificationFromOutboxUseCaseTest(
     @Autowired private val useCase: CreateNotificationFromOutboxUseCase,
     @Autowired private val notificationRepository: NotificationRepository,
     @Autowired private val objectMapper: ObjectMapper,
+    @Autowired private val deletedAccountRepository: DeletedAccountRepository,
 ) {
 
     @Test
@@ -78,6 +82,24 @@ class CreateNotificationFromOutboxUseCaseTest(
         assertEquals("지난 여행 Recap이 완성됐어요", notifications.first().title)
         assertEquals("제주 여행 추억을 확인해보세요.", notifications.first().body)
         assertEquals("togethertrip://trips/10/recap/100", notifications.first().deeplink)
+    }
+
+    @Test
+    fun `tombstone 사용자는 지연된 알림 수신자에서 제외한다`() {
+        deletedAccountRepository.save(
+            DeletedAccount(
+                userId = 2L,
+                sourceEventId = 300L,
+                deletedAt = Instant.parse("2026-07-28T12:00:00Z"),
+            )
+        )
+
+        val result = useCase.create(
+            sampleMessage(sourceEventId = 301L, recipientUserIds = listOf(1L, 2L, 3L))
+        )
+
+        assertEquals(2, result.createdCount)
+        assertEquals(listOf(1L, 3L), notificationRepository.findAll().map { it.recipientUserId }.sorted())
     }
 
     private fun sampleMessage(sourceEventId: Long, recipientUserIds: List<Long>): MainOutboxEventMessage {

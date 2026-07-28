@@ -1,6 +1,7 @@
 package com.togethertrip.notification.notification.service
 
 object NotificationEventContract {
+    const val USER_ACCOUNT_DELETED = "USER_ACCOUNT_DELETED"
     const val TRIP_PARTICIPANTS_ADDED = "TRIP_PARTICIPANTS_ADDED"
     const val TRIP_PARTICIPANT_JOINED = "TRIP_PARTICIPANT_JOINED"
     const val TRIP_PARTICIPANT_REMOVED = "TRIP_PARTICIPANT_REMOVED"
@@ -13,6 +14,7 @@ object NotificationEventContract {
     const val SETTLEMENT_TRANSFER_COMPLETED = "SETTLEMENT_TRANSFER_COMPLETED"
 
     const val AGGREGATE_TRIP = "TRIP"
+    const val AGGREGATE_USER = "USER"
     const val AGGREGATE_TRIP_RECAP = "TRIP_RECAP"
     const val AGGREGATE_POST = "POST"
     const val AGGREGATE_SETTLEMENT = "SETTLEMENT"
