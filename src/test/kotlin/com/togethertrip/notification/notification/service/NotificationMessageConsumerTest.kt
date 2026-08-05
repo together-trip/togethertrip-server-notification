@@ -16,11 +16,13 @@ class NotificationMessageConsumerTest {
     private val queue = FakeNotificationMessageQueue()
     private val useCase = mock<CreateNotificationFromOutboxUseCase>()
     private val accountDeletionService = mock<AccountDeletionService>()
+    private val metrics = RecordingNotificationMessageConsumerMetrics()
     private val consumer = NotificationMessageConsumer(
         notificationMessageQueue = queue,
         objectMapper = jacksonObjectMapper(),
         createNotificationFromOutboxUseCase = useCase,
         accountDeletionService = accountDeletionService,
+        metrics = metrics,
     )
 
     @Test
@@ -62,6 +64,18 @@ class NotificationMessageConsumerTest {
         verify(accountDeletionService).delete(any())
         verify(useCase, never()).create(any())
         assertEquals(listOf(message), queue.acknowledgedMessages)
+        assertEquals(listOf(AccountDeletionConsumeOutcome.DELETED), metrics.accountDeletionOutcomes)
+    }
+
+    @Test
+    fun `중복 계정 삭제 이벤트도 acknowledge하고 duplicate metric을 기록한다`() {
+        whenever(accountDeletionService.delete(any())).thenReturn(false)
+        val message = accountDeletionMessage()
+
+        consumer.handle(message)
+
+        assertEquals(listOf(message), queue.acknowledgedMessages)
+        assertEquals(listOf(AccountDeletionConsumeOutcome.DUPLICATE), metrics.accountDeletionOutcomes)
     }
 
     @Test
@@ -71,6 +85,17 @@ class NotificationMessageConsumerTest {
         consumer.handle(accountDeletionMessage())
 
         assertEquals(emptyList<ReceivedNotificationMessage>(), queue.acknowledgedMessages)
+        assertEquals(listOf(AccountDeletionConsumeOutcome.FAILED), metrics.accountDeletionOutcomes)
+    }
+
+    @Test
+    fun `계정 삭제 acknowledge 실패는 deleted 대신 failed metric만 기록한다`() {
+        whenever(accountDeletionService.delete(any())).thenReturn(true)
+        queue.acknowledgeFailure = IllegalStateException("ack failed")
+
+        consumer.handle(accountDeletionMessage())
+
+        assertEquals(listOf(AccountDeletionConsumeOutcome.FAILED), metrics.accountDeletionOutcomes)
     }
 
     @Test
@@ -121,13 +146,23 @@ class NotificationMessageConsumerTest {
         )
 }
 
+private class RecordingNotificationMessageConsumerMetrics : NotificationMessageConsumerMetrics {
+    val accountDeletionOutcomes = mutableListOf<AccountDeletionConsumeOutcome>()
+
+    override fun recordAccountDeletion(outcome: AccountDeletionConsumeOutcome) {
+        accountDeletionOutcomes += outcome
+    }
+}
+
 private class FakeNotificationMessageQueue : NotificationMessageQueue {
     var messages: List<ReceivedNotificationMessage> = emptyList()
     val acknowledgedMessages = mutableListOf<ReceivedNotificationMessage>()
+    var acknowledgeFailure: Exception? = null
 
     override fun receive(): List<ReceivedNotificationMessage> = messages
 
     override fun acknowledge(message: ReceivedNotificationMessage) {
+        acknowledgeFailure?.let { throw it }
         acknowledgedMessages += message
     }
 }
