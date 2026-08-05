@@ -1,0 +1,9 @@
+package com.togethertrip.notification.global.logging
+
+import org.springframework.stereotype.Component
+import java.util.UUID
+
+@Component
+class RequestIdGenerator {
+    fun generate(): String = UUID.randomUUID().toString()
+}
