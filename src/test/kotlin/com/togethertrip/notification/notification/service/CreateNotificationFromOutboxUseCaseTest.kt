@@ -23,6 +23,7 @@ class CreateNotificationFromOutboxUseCaseTest(
     @Autowired private val notificationRepository: NotificationRepository,
     @Autowired private val objectMapper: ObjectMapper,
     @Autowired private val deletedAccountRepository: DeletedAccountRepository,
+    @Autowired private val notificationService: NotificationService,
 ) {
 
     @Test
@@ -44,6 +45,31 @@ class CreateNotificationFromOutboxUseCaseTest(
 
         assertEquals(2, first.createdCount)
         assertEquals(0, second.createdCount)
+        assertEquals(2, notificationRepository.count())
+    }
+
+    @Test
+    fun `메시지를 역순 소비하고 최신 메시지를 재전달해도 발생 순서와 멱등성을 유지한다`() {
+        val newer = sampleMessage(
+            sourceEventId = 402L,
+            recipientUserIds = listOf(1L),
+            occurredAt = "2026-06-24T02:00:00Z",
+        )
+        val older = sampleMessage(
+            sourceEventId = 401L,
+            recipientUserIds = listOf(1L),
+            occurredAt = "2026-06-24T01:00:00Z",
+        )
+
+        val newestFirst = useCase.create(newer)
+        val olderLater = useCase.create(older)
+        val redelivered = useCase.create(newer)
+        val notifications = notificationService.getMyNotifications(userId = 1L, limit = 100)
+
+        assertEquals(1, newestFirst.createdCount)
+        assertEquals(1, olderLater.createdCount)
+        assertEquals(0, redelivered.createdCount)
+        assertEquals(listOf(402L, 401L), notifications.map { it.sourceEventId })
         assertEquals(2, notificationRepository.count())
     }
 
@@ -102,7 +128,11 @@ class CreateNotificationFromOutboxUseCaseTest(
         assertEquals(listOf(1L, 3L), notificationRepository.findAll().map { it.recipientUserId }.sorted())
     }
 
-    private fun sampleMessage(sourceEventId: Long, recipientUserIds: List<Long>): MainOutboxEventMessage {
+    private fun sampleMessage(
+        sourceEventId: Long,
+        recipientUserIds: List<Long>,
+        occurredAt: String = "2026-06-24T00:00:00Z",
+    ): MainOutboxEventMessage {
         val recipients = recipientUserIds.joinToString(",") { """{"userId":$it}""" }
         val payload = objectMapper.readTree(
             """
@@ -110,7 +140,7 @@ class CreateNotificationFromOutboxUseCaseTest(
               "recipients": [$recipients],
               "actorUserId": 99,
               "tripId": 10,
-              "occurredAt": "2026-06-24T00:00:00Z",
+              "occurredAt": "$occurredAt",
               "eventVersion": 1
             }
             """.trimIndent(),

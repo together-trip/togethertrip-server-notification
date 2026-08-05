@@ -1,9 +1,12 @@
 package com.togethertrip.notification.notification.service
 
+import com.togethertrip.notification.global.logging.NotificationLoggingContext
 import com.togethertrip.notification.notification.service.message.ReceivedNotificationMessage
 import com.togethertrip.notification.notification.service.result.CreateNotificationResult
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.slf4j.MDC
 import org.mockito.kotlin.any
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
@@ -24,6 +27,11 @@ class NotificationMessageConsumerTest {
         accountDeletionService = accountDeletionService,
         metrics = metrics,
     )
+
+    @AfterEach
+    fun clearMdc() {
+        MDC.clear()
+    }
 
     @Test
     fun `메시지 처리 성공 시 queue 메시지를 acknowledge 한다`() {
@@ -52,6 +60,25 @@ class NotificationMessageConsumerTest {
         consumer.poll()
 
         verify(useCase).create(any())
+    }
+
+    @Test
+    fun `outbox event ID를 처리 중 correlation requestId로 사용하고 기존 MDC를 복원한다`() {
+        MDC.put(NotificationLoggingContext.REQUEST_ID, "upstream-request")
+        MDC.put(NotificationLoggingContext.EVENT_TYPE, "UPSTREAM_EVENT")
+        whenever(useCase.create(any())).thenAnswer {
+            assertEquals("outbox:201", NotificationLoggingContext.currentRequestId())
+            assertEquals(
+                "TRIP_PARTICIPANTS_ADDED",
+                MDC.get(NotificationLoggingContext.EVENT_TYPE),
+            )
+            CreateNotificationResult(createdCount = 1)
+        }
+
+        consumer.handle(sampleMessage())
+
+        assertEquals("upstream-request", NotificationLoggingContext.currentRequestId())
+        assertEquals("UPSTREAM_EVENT", MDC.get(NotificationLoggingContext.EVENT_TYPE))
     }
 
     @Test
