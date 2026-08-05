@@ -14,6 +14,7 @@ class NotificationMessageConsumer(
     private val objectMapper: ObjectMapper,
     private val createNotificationFromOutboxUseCase: CreateNotificationFromOutboxUseCase,
     private val accountDeletionService: AccountDeletionService,
+    private val metrics: NotificationMessageConsumerMetrics,
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
@@ -24,10 +25,26 @@ class NotificationMessageConsumer(
     }
 
     fun handle(message: ReceivedNotificationMessage) {
+        var accountDeletionEvent = false
         try {
             val outboxEvent = objectMapper.readValue(message.body, MainOutboxEventMessage::class.java)
+            accountDeletionEvent = outboxEvent.eventType == NotificationEventContract.USER_ACCOUNT_DELETED
             val handledCount = if (outboxEvent.eventType == NotificationEventContract.USER_ACCOUNT_DELETED) {
-                if (accountDeletionService.delete(outboxEvent)) 1 else 0
+                val deleted = accountDeletionService.delete(outboxEvent)
+                metrics.recordAccountDeletion(
+                    if (deleted) {
+                        AccountDeletionConsumeOutcome.DELETED
+                    } else {
+                        AccountDeletionConsumeOutcome.DUPLICATE
+                    }
+                )
+                logger.info(
+                    "account deletion event consumed. sourceEventId={}, userId={}, outcome={}",
+                    outboxEvent.id,
+                    outboxEvent.aggregateId,
+                    if (deleted) "deleted" else "duplicate",
+                )
+                if (deleted) 1 else 0
             } else {
                 createNotificationFromOutboxUseCase.create(outboxEvent).createdCount
             }
@@ -38,6 +55,9 @@ class NotificationMessageConsumer(
                 handledCount,
             )
         } catch (exception: Exception) {
+            if (accountDeletionEvent) {
+                metrics.recordAccountDeletion(AccountDeletionConsumeOutcome.FAILED)
+            }
             logger.warn(
                 "notification outbox message consume failed. messageId={}",
                 message.id,
