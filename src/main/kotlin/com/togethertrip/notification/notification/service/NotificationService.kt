@@ -17,7 +17,7 @@ class NotificationService(
     fun getMyNotifications(userId: Long, limit: Int): List<Notification> {
         val pageSize = limit.coerceIn(1, MAX_NOTIFICATION_LIST_SIZE)
         return notificationRepository
-            .findByRecipientUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            .findRecentByRecipientUserId(
                 recipientUserId = userId,
                 pageable = PageRequest.of(0, pageSize),
             )
@@ -39,7 +39,7 @@ class NotificationService(
     @Transactional
     fun markAllAsRead(userId: Long): Int {
         val notifications = notificationRepository
-            .findByRecipientUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+            .findRecentByRecipientUserId(
                 recipientUserId = userId,
                 pageable = PageRequest.of(0, MAX_NOTIFICATION_LIST_SIZE),
             )
