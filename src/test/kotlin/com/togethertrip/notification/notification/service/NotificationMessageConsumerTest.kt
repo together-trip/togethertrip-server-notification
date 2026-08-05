@@ -89,6 +89,16 @@ class NotificationMessageConsumerTest {
     }
 
     @Test
+    fun `계정 삭제 acknowledge 실패는 deleted 대신 failed metric만 기록한다`() {
+        whenever(accountDeletionService.delete(any())).thenReturn(true)
+        queue.acknowledgeFailure = IllegalStateException("ack failed")
+
+        consumer.handle(accountDeletionMessage())
+
+        assertEquals(listOf(AccountDeletionConsumeOutcome.FAILED), metrics.accountDeletionOutcomes)
+    }
+
+    @Test
     fun `no-op queue는 SQS 연결이 없어도 메시지를 반환하지 않는다`() {
         assertEquals(emptyList<ReceivedNotificationMessage>(), com.togethertrip.notification.notification.infrastructure.sqs.NoopNotificationMessageQueue.receive())
         verify(useCase, never()).create(any())
@@ -147,10 +157,12 @@ private class RecordingNotificationMessageConsumerMetrics : NotificationMessageC
 private class FakeNotificationMessageQueue : NotificationMessageQueue {
     var messages: List<ReceivedNotificationMessage> = emptyList()
     val acknowledgedMessages = mutableListOf<ReceivedNotificationMessage>()
+    var acknowledgeFailure: Exception? = null
 
     override fun receive(): List<ReceivedNotificationMessage> = messages
 
     override fun acknowledge(message: ReceivedNotificationMessage) {
+        acknowledgeFailure?.let { throw it }
         acknowledgedMessages += message
     }
 }
