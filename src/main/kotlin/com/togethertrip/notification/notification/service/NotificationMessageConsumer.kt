@@ -1,5 +1,6 @@
 package com.togethertrip.notification.notification.service
 
+import com.togethertrip.notification.global.logging.NotificationLoggingContext
 import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
 import com.togethertrip.notification.notification.service.message.ReceivedNotificationMessage
 import org.slf4j.LoggerFactory
@@ -25,57 +26,68 @@ class NotificationMessageConsumer(
     }
 
     fun handle(message: ReceivedNotificationMessage) {
-        var accountDeletionEvent = false
-        try {
-            val outboxEvent = objectMapper.readValue(message.body, MainOutboxEventMessage::class.java)
-            accountDeletionEvent = outboxEvent.eventType == NotificationEventContract.USER_ACCOUNT_DELETED
-            var accountDeletionOutcome: AccountDeletionConsumeOutcome? = null
-            val handledCount = if (outboxEvent.eventType == NotificationEventContract.USER_ACCOUNT_DELETED) {
-                val deleted = accountDeletionService.delete(outboxEvent)
-                accountDeletionOutcome =
-                    if (deleted) {
-                        AccountDeletionConsumeOutcome.DELETED
-                    } else {
-                        AccountDeletionConsumeOutcome.DUPLICATE
-                    }
-                if (deleted) 1 else 0
-            } else {
-                createNotificationFromOutboxUseCase.create(outboxEvent).createdCount
-            }
-            notificationMessageQueue.acknowledge(message)
-            accountDeletionOutcome?.let { outcome ->
-                recordAccountDeletionMetric(outcome)
-                logger.info(
-                    "account deletion event consumed. sourceEventId={}, userId={}, outcome={}",
-                    outboxEvent.id,
-                    outboxEvent.aggregateId,
-                    outcome.tagValue,
+        NotificationLoggingContext.withRequestScope("sqs:${message.id}") {
+            var accountDeletionEvent = false
+            try {
+                val outboxEvent = objectMapper.readValue(message.body, MainOutboxEventMessage::class.java)
+                NotificationLoggingContext.putRequestId("outbox:${outboxEvent.id}")
+                NotificationLoggingContext.putEventType(outboxEvent.eventType)
+                accountDeletionEvent = outboxEvent.eventType == NotificationEventContract.USER_ACCOUNT_DELETED
+                consume(message, outboxEvent)
+            } catch (exception: Exception) {
+                if (accountDeletionEvent) {
+                    recordAccountDeletionMetric(AccountDeletionConsumeOutcome.FAILED)
+                }
+                logger.warn(
+                    "notification outbox message consume failed. correlationId={}, exceptionType={}",
+                    NotificationLoggingContext.currentRequestId(),
+                    exception::class.simpleName ?: exception.javaClass.name,
                 )
             }
+        }
+    }
+
+    private fun consume(
+        message: ReceivedNotificationMessage,
+        outboxEvent: MainOutboxEventMessage,
+    ) {
+        var accountDeletionOutcome: AccountDeletionConsumeOutcome? = null
+        val handledCount = if (outboxEvent.eventType == NotificationEventContract.USER_ACCOUNT_DELETED) {
+            val deleted = accountDeletionService.delete(outboxEvent)
+            accountDeletionOutcome =
+                if (deleted) {
+                    AccountDeletionConsumeOutcome.DELETED
+                } else {
+                    AccountDeletionConsumeOutcome.DUPLICATE
+                }
+            if (deleted) 1 else 0
+        } else {
+            createNotificationFromOutboxUseCase.create(outboxEvent).createdCount
+        }
+        notificationMessageQueue.acknowledge(message)
+        accountDeletionOutcome?.let { outcome ->
+            recordAccountDeletionMetric(outcome)
             logger.info(
-                "notification outbox message consumed. sourceEventId={}, handledCount={}",
+                "account deletion event consumed. sourceEventId={}, userId={}, outcome={}",
                 outboxEvent.id,
-                handledCount,
-            )
-        } catch (exception: Exception) {
-            if (accountDeletionEvent) {
-                recordAccountDeletionMetric(AccountDeletionConsumeOutcome.FAILED)
-            }
-            logger.warn(
-                "notification outbox message consume failed. messageId={}",
-                message.id,
-                exception,
+                outboxEvent.aggregateId,
+                outcome.tagValue,
             )
         }
+        logger.info(
+            "notification outbox message consumed. sourceEventId={}, handledCount={}",
+            outboxEvent.id,
+            handledCount,
+        )
     }
 
     private fun recordAccountDeletionMetric(outcome: AccountDeletionConsumeOutcome) {
         runCatching { metrics.recordAccountDeletion(outcome) }
             .onFailure { exception ->
                 logger.warn(
-                    "account deletion metric record failed. outcome={}",
+                    "account deletion metric record failed. outcome={}, exceptionType={}",
                     outcome.tagValue,
-                    exception,
+                    exception::class.simpleName ?: exception.javaClass.name,
                 )
             }
     }
