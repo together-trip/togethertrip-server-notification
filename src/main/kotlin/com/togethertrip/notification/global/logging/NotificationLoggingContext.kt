@@ -12,6 +12,20 @@ object NotificationLoggingContext {
 
     fun putRequestId(requestId: String) = put(REQUEST_ID, requestId)
 
+    fun currentRequestId(): String = MDC.get(REQUEST_ID) ?: NO_REQUEST_ID
+
+    fun <T> withRequestScope(requestId: String, block: () -> T): T {
+        val previousContext = MDC.getCopyOfContextMap()
+        MDC.clear()
+        putRequestId(requestId)
+        return try {
+            block()
+        } finally {
+            MDC.clear()
+            previousContext?.let(MDC::setContextMap)
+        }
+    }
+
     fun putUser(userId: String?) = put(USER_ID, userId ?: "anonymous")
 
     fun putNotification(notificationId: String?) = putIfPresent(NOTIFICATION_ID, notificationId)
@@ -45,4 +59,5 @@ object NotificationLoggingContext {
 
     private const val MAX_VALUE_LENGTH = 100
     private const val SAFE_PUNCTUATION = "-_.:@"
+    private const val NO_REQUEST_ID = "none"
 }

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -31,6 +32,70 @@ class NotificationServiceTest(
 
         assertEquals(2, result.size)
         assertEquals(listOf(3L, 1L), result.map { it.sourceEventId })
+    }
+
+    @Test
+    fun `소비 순서와 무관하게 occurredAt 최신순으로 조회한다`() {
+        notificationRepository.save(
+            sampleNotification(
+                recipientUserId = 1L,
+                sourceEventId = 20L,
+                occurredAt = Instant.parse("2026-06-24T02:00:00Z"),
+                createdAt = Instant.parse("2026-06-24T01:00:00Z"),
+            ),
+        )
+        notificationRepository.save(
+            sampleNotification(
+                recipientUserId = 1L,
+                sourceEventId = 10L,
+                occurredAt = Instant.parse("2026-06-24T01:00:00Z"),
+                createdAt = Instant.parse("2026-06-24T02:00:00Z"),
+            ),
+        )
+
+        val result = notificationService.getMyNotifications(userId = 1L, limit = 100)
+
+        assertEquals(listOf(20L, 10L), result.map { it.sourceEventId })
+    }
+
+    @Test
+    fun `occurredAt이 같으면 sourceEventId 내림차순으로 고정한다`() {
+        val occurredAt = Instant.parse("2026-06-24T01:00:00Z")
+        notificationRepository.save(
+            sampleNotification(recipientUserId = 1L, sourceEventId = 10L, occurredAt = occurredAt),
+        )
+        notificationRepository.save(
+            sampleNotification(recipientUserId = 1L, sourceEventId = 30L, occurredAt = occurredAt),
+        )
+        notificationRepository.save(
+            sampleNotification(recipientUserId = 1L, sourceEventId = 20L, occurredAt = occurredAt),
+        )
+
+        val result = notificationService.getMyNotifications(userId = 1L, limit = 100)
+
+        assertEquals(listOf(30L, 20L, 10L), result.map { it.sourceEventId })
+    }
+
+    @Test
+    fun `occurredAt이 없으면 createdAt 최신순으로 조회한다`() {
+        notificationRepository.save(
+            sampleNotification(
+                recipientUserId = 1L,
+                sourceEventId = 20L,
+                createdAt = Instant.parse("2026-06-24T01:00:00Z"),
+            ),
+        )
+        notificationRepository.save(
+            sampleNotification(
+                recipientUserId = 1L,
+                sourceEventId = 10L,
+                createdAt = Instant.parse("2026-06-24T02:00:00Z"),
+            ),
+        )
+
+        val result = notificationService.getMyNotifications(userId = 1L, limit = 100)
+
+        assertEquals(listOf(10L, 20L), result.map { it.sourceEventId })
     }
 
     @Test
@@ -100,7 +165,12 @@ class NotificationServiceTest(
         }
     }
 
-    private fun sampleNotification(recipientUserId: Long, sourceEventId: Long): Notification =
+    private fun sampleNotification(
+        recipientUserId: Long,
+        sourceEventId: Long,
+        occurredAt: Instant? = null,
+        createdAt: Instant? = null,
+    ): Notification =
         Notification(
             sourceEventId = sourceEventId,
             recipientUserId = recipientUserId,
@@ -111,5 +181,8 @@ class NotificationServiceTest(
             title = "title $sourceEventId",
             body = "body",
             deeplink = "togethertrip://posts/$sourceEventId",
-        )
+            occurredAt = occurredAt,
+        ).also { notification ->
+            createdAt?.let { notification.createdAt = it }
+        }
 }

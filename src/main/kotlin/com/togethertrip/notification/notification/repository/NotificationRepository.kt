@@ -29,8 +29,19 @@ interface NotificationRepository : JpaRepository<Notification, Long> {
         @Param("recipientUserIds") recipientUserIds: Collection<Long>,
     ): Set<Long>
 
-    fun findByRecipientUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
-        recipientUserId: Long,
+    @Query(
+        """
+        select n
+        from Notification n
+        where n.recipientUserId = :recipientUserId
+          and n.deletedAt is null
+        order by coalesce(n.occurredAt, n.createdAt) desc,
+                 n.sourceEventId desc,
+                 n.id desc
+        """,
+    )
+    fun findRecentByRecipientUserId(
+        @Param("recipientUserId") recipientUserId: Long,
         pageable: Pageable,
     ): List<Notification>
 
