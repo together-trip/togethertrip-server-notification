@@ -3,6 +3,7 @@ package com.togethertrip.notification.notification.service
 import com.togethertrip.notification.notification.domain.Notification
 import com.togethertrip.notification.notification.push.NotificationPushDispatchService
 import com.togethertrip.notification.notification.repository.NotificationRepository
+import com.togethertrip.notification.notification.repository.DeletedAccountRepository
 import com.togethertrip.notification.notification.service.message.MainOutboxEventMessage
 import com.togethertrip.notification.notification.service.result.CreateNotificationResult
 import org.springframework.stereotype.Service
@@ -17,6 +18,7 @@ class CreateNotificationFromOutboxUseCase(
     private val notificationPayloadMapper: NotificationPayloadMapper,
     private val notificationPushDispatchService: NotificationPushDispatchService,
     private val objectMapper: ObjectMapper,
+    private val deletedAccountRepository: DeletedAccountRepository,
 ) {
 
     @Transactional
@@ -26,13 +28,19 @@ class CreateNotificationFromOutboxUseCase(
             return CreateNotificationResult(0)
         }
 
+        val deletedUserIds = deletedAccountRepository.findDeletedUserIds(recipientUserIds)
+        val activeRecipientUserIds = recipientUserIds.filterNot { it in deletedUserIds }
+        if (activeRecipientUserIds.isEmpty()) {
+            return CreateNotificationResult(0)
+        }
+
         val existingRecipientUserIds = notificationRepository.findExistingRecipientUserIds(
             sourceEventId = message.id,
-            recipientUserIds = recipientUserIds,
+            recipientUserIds = activeRecipientUserIds,
         )
         val payloadSnapshot = objectMapper.writeValueAsString(message.payload)
         val display = notificationPayloadMapper.map(message)
-        val notifications = recipientUserIds
+        val notifications = activeRecipientUserIds
             .filterNot { it in existingRecipientUserIds }
             .map { recipientUserId ->
                 Notification(

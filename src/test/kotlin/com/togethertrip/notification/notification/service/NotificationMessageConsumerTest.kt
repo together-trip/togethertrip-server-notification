@@ -15,10 +15,14 @@ class NotificationMessageConsumerTest {
 
     private val queue = FakeNotificationMessageQueue()
     private val useCase = mock<CreateNotificationFromOutboxUseCase>()
+    private val accountDeletionService = mock<AccountDeletionService>()
+    private val metrics = RecordingNotificationMessageConsumerMetrics()
     private val consumer = NotificationMessageConsumer(
         notificationMessageQueue = queue,
         objectMapper = jacksonObjectMapper(),
         createNotificationFromOutboxUseCase = useCase,
+        accountDeletionService = accountDeletionService,
+        metrics = metrics,
     )
 
     @Test
@@ -51,6 +55,50 @@ class NotificationMessageConsumerTest {
     }
 
     @Test
+    fun `계정 삭제 이벤트는 전용 service로 전달하고 성공 시 acknowledge 한다`() {
+        whenever(accountDeletionService.delete(any())).thenReturn(true)
+        val message = accountDeletionMessage()
+
+        consumer.handle(message)
+
+        verify(accountDeletionService).delete(any())
+        verify(useCase, never()).create(any())
+        assertEquals(listOf(message), queue.acknowledgedMessages)
+        assertEquals(listOf(AccountDeletionConsumeOutcome.DELETED), metrics.accountDeletionOutcomes)
+    }
+
+    @Test
+    fun `중복 계정 삭제 이벤트도 acknowledge하고 duplicate metric을 기록한다`() {
+        whenever(accountDeletionService.delete(any())).thenReturn(false)
+        val message = accountDeletionMessage()
+
+        consumer.handle(message)
+
+        assertEquals(listOf(message), queue.acknowledgedMessages)
+        assertEquals(listOf(AccountDeletionConsumeOutcome.DUPLICATE), metrics.accountDeletionOutcomes)
+    }
+
+    @Test
+    fun `잘못된 계정 삭제 payload 처리 실패는 acknowledge 하지 않는다`() {
+        whenever(accountDeletionService.delete(any())).thenThrow(IllegalArgumentException("invalid payload"))
+
+        consumer.handle(accountDeletionMessage())
+
+        assertEquals(emptyList<ReceivedNotificationMessage>(), queue.acknowledgedMessages)
+        assertEquals(listOf(AccountDeletionConsumeOutcome.FAILED), metrics.accountDeletionOutcomes)
+    }
+
+    @Test
+    fun `계정 삭제 acknowledge 실패는 deleted 대신 failed metric만 기록한다`() {
+        whenever(accountDeletionService.delete(any())).thenReturn(true)
+        queue.acknowledgeFailure = IllegalStateException("ack failed")
+
+        consumer.handle(accountDeletionMessage())
+
+        assertEquals(listOf(AccountDeletionConsumeOutcome.FAILED), metrics.accountDeletionOutcomes)
+    }
+
+    @Test
     fun `no-op queue는 SQS 연결이 없어도 메시지를 반환하지 않는다`() {
         assertEquals(emptyList<ReceivedNotificationMessage>(), com.togethertrip.notification.notification.infrastructure.sqs.NoopNotificationMessageQueue.receive())
         verify(useCase, never()).create(any())
@@ -77,15 +125,44 @@ class NotificationMessageConsumerTest {
                 }
             """.trimIndent(),
         )
+
+    private fun accountDeletionMessage(): ReceivedNotificationMessage =
+        ReceivedNotificationMessage(
+            id = "message-account-deleted",
+            receiptHandle = "receipt-account-deleted",
+            body = """
+                {
+                  "id": 301,
+                  "aggregateType": "USER",
+                  "aggregateId": 7,
+                  "eventType": "USER_ACCOUNT_DELETED",
+                  "payload": {
+                    "eventVersion": 1,
+                    "userId": 7,
+                    "occurredAt": "2026-07-28T12:00:00Z"
+                  }
+                }
+            """.trimIndent(),
+        )
+}
+
+private class RecordingNotificationMessageConsumerMetrics : NotificationMessageConsumerMetrics {
+    val accountDeletionOutcomes = mutableListOf<AccountDeletionConsumeOutcome>()
+
+    override fun recordAccountDeletion(outcome: AccountDeletionConsumeOutcome) {
+        accountDeletionOutcomes += outcome
+    }
 }
 
 private class FakeNotificationMessageQueue : NotificationMessageQueue {
     var messages: List<ReceivedNotificationMessage> = emptyList()
     val acknowledgedMessages = mutableListOf<ReceivedNotificationMessage>()
+    var acknowledgeFailure: Exception? = null
 
     override fun receive(): List<ReceivedNotificationMessage> = messages
 
     override fun acknowledge(message: ReceivedNotificationMessage) {
+        acknowledgeFailure?.let { throw it }
         acknowledgedMessages += message
     }
 }
